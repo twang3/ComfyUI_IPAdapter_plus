@@ -1,6 +1,9 @@
 import re
 import torch
 import os
+
+import torch.nn as nn
+
 import folder_paths
 from comfy.clip_vision import clip_preprocess, Output
 import comfy.utils
@@ -9,6 +12,17 @@ try:
     import torchvision.transforms.v2 as T
 except ImportError:
     import torchvision.transforms as T
+
+
+class To_KV(nn.Module):
+    def __init__(self, state_dict):
+        super().__init__()
+
+        self.to_kvs = nn.ModuleDict()
+        for key, value in state_dict.items():
+            self.to_kvs[key.replace(".weight", "").replace(".", "_")] = nn.Linear(value.shape[1], value.shape[0], bias=False)
+            self.to_kvs[key.replace(".weight", "").replace(".", "_")].weight.data = value
+
 
 def get_clipvision_file(preset):
     preset = preset.lower()
@@ -140,6 +154,8 @@ def ipadapter_model_loader(file):
     
     if 'unnorm' in file.lower():
         model["portraitunnorm"] = True
+
+    model["ip_layers"] = To_KV(model["ip_adapter"])
 
     return model
 

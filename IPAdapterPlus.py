@@ -29,6 +29,7 @@ from .utils import (
     get_clipvision_file,
     get_ipadapter_file,
     get_lora_file,
+    To_KV,
 )
 
 # set the models directory
@@ -68,7 +69,7 @@ class IPAdapter(nn.Module):
             self.image_proj_model = self.init_proj()
 
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
-        self.ip_layers = To_KV(ipadapter_model["ip_adapter"])
+        self.ip_layers = ipadapter_model["ip_layers"] if "ip_layers" in ipadapter_model else To_KV(ipadapter_model["ip_adapter"])
 
     def init_proj(self):
         image_proj_model = ImageProjModel(
@@ -171,14 +172,6 @@ class IPAdapter(nn.Module):
         #embeds = self.image_proj_model(face_embed, clip_embed, scale=s_scale, shortcut=shortcut)
         return embeds
 
-class To_KV(nn.Module):
-    def __init__(self, state_dict):
-        super().__init__()
-
-        self.to_kvs = nn.ModuleDict()
-        for key, value in state_dict.items():
-            self.to_kvs[key.replace(".weight", "").replace(".", "_")] = nn.Linear(value.shape[1], value.shape[0], bias=False)
-            self.to_kvs[key.replace(".weight", "").replace(".", "_")].weight.data = value
 
 def set_model_patch_replace(model, patch_kwargs, key):
     to = model.model_options["transformer_options"].copy()
