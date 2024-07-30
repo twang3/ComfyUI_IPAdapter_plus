@@ -606,6 +606,8 @@ class IPAdapterUnifiedLoaderCommunity(IPAdapterUnifiedLoader):
 
     CATEGORY = "ipadapter/loaders"
 
+cached_models = {}
+
 class IPAdapterModelLoader:
     @classmethod
     def INPUT_TYPES(s):
@@ -617,7 +619,11 @@ class IPAdapterModelLoader:
 
     def load_ipadapter_model(self, ipadapter_file):
         ipadapter_file = folder_paths.get_full_path("ipadapter", ipadapter_file)
-        return (ipadapter_model_loader(ipadapter_file),)
+        if ipadapter_file in cached_models:
+            return (cached_models[ipadapter_file],)
+        model = ipadapter_model_loader(ipadapter_file)
+        cached_models[ipadapter_file] = model
+        return (model,)
 
 class IPAdapterInsightFaceLoader:
     @classmethod
